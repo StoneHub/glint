@@ -85,8 +85,8 @@ struct MDBlockView: View {
             .padding(.top, level <= 2 ? 12 * scale : 4 * scale)
             .id(slug)
 
-        case .code(let language, let code):
-            CodeBlockView(language: language, code: code, scale: scale)
+        case .code(let language, let code, let highlighted):
+            CodeBlockView(language: language, code: code, highlighted: highlighted, scale: scale)
 
         case .quote(let blocks):
             HStack(alignment: .top, spacing: 12) {
@@ -140,14 +140,16 @@ struct MDBlockView: View {
 
 struct CodeBlockView: View {
     let language: String?
+    /// The plain source, for the copy button.
     let code: String
+    let highlighted: AttributedString
     let scale: Double
 
     @State private var copied = false
 
     var body: some View {
         ScrollView(.horizontal) {
-            Text(verbatim: code)
+            Text(highlighted)
                 .font(.system(size: Typography.code * scale, design: .monospaced))
                 .lineSpacing(2 * scale)
                 .textSelection(.enabled)

@@ -21,7 +21,7 @@ struct MDBlock: Identifiable, Sendable {
     indirect enum Content: Sendable {
         case paragraph(AttributedString)
         case heading(level: Int, text: AttributedString, slug: String)
-        case code(language: String?, code: String)
+        case code(language: String?, code: String, highlighted: AttributedString)
         case quote([MDBlock])
         case list(ordered: Bool, items: [MDListItem])
         case table(alignments: [MDAlignment], header: [AttributedString], rows: [[AttributedString]])
@@ -121,7 +121,8 @@ struct MarkdownParser: Sendable {
             // Foundation keeps the newline before the closing fence; the view adds its own padding.
             var code = String(node.text.characters)
             if code.hasSuffix("\n") { code.removeLast() }
-            return .code(language: language, code: code)
+            let highlighted = SyntaxHighlighter(languageName: language).highlight(code)
+            return .code(language: language, code: code, highlighted: highlighted)
 
         case .blockQuote?:
             return .quote(node.children.compactMap(block(from:)))
