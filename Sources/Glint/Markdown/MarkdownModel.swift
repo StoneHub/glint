@@ -10,7 +10,8 @@ struct MarkdownBlock: Identifiable, Sendable {
     enum Kind: Sendable {
         case paragraph(AttributedString)
         case heading(level: Int, text: AttributedString, slug: String)
-        case code(language: String?, code: String)
+        /// `code` is the raw text (for the copy button); `highlighted` is the same text with token colors.
+        case code(language: String?, code: String, highlighted: AttributedString)
         case quote([MarkdownBlock])
         case list(ordered: Bool, items: [ListItem])
         case table(alignments: [ColumnAlignment], header: [AttributedString], rows: [[AttributedString]])
@@ -122,7 +123,8 @@ struct MarkdownParser: Sendable {
         case .codeBlock(let language)?:
             var code = String(node.text.characters)
             if code.hasSuffix("\n") { code.removeLast() }
-            return .code(language: language, code: code)
+            let highlighted = SyntaxHighlighter(languageNamed: language)?.highlight(code) ?? AttributedString(code)
+            return .code(language: language, code: code, highlighted: highlighted)
 
         case .blockQuote?:
             return .quote(node.children.compactMap(block(from:)))
