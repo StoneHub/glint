@@ -6,7 +6,7 @@ struct MarkdownPreview: View {
     let baseURL: URL?
     let scale: Double
 
-    @State private var blocks: [MDBlock] = []
+    @State private var blocks: [MarkdownBlock] = []
     @State private var hasRendered = false
 
     private struct ParseKey: Equatable {
@@ -19,7 +19,7 @@ struct MarkdownPreview: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14 * scale) {
                     ForEach(blocks) { block in
-                        MDBlockView(block: block, scale: scale)
+                        MarkdownBlockView(block: block, scale: scale)
                     }
                 }
                 .frame(maxWidth: 760 * scale, alignment: .leading)
@@ -54,19 +54,19 @@ struct MarkdownPreview: View {
 
 // MARK: - Blocks
 
-struct MDBlockView: View {
-    let block: MDBlock
+struct MarkdownBlockView: View {
+    let block: MarkdownBlock
     let scale: Double
 
     var body: some View {
-        switch block {
-        case .paragraph(_, let text):
+        switch block.kind {
+        case .paragraph(let text):
             Text(text)
                 .lineSpacing(3 * scale)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
 
-        case .heading(_, let level, let text, let slug):
+        case .heading(let level, let text, let slug):
             VStack(alignment: .leading, spacing: 6) {
                 Text(text)
                     .textSelection(.enabled)
@@ -78,31 +78,31 @@ struct MDBlockView: View {
             .padding(.top, level <= 2 ? 12 * scale : 4 * scale)
             .id(slug)
 
-        case .code(_, let language, let code):
+        case .code(let language, let code):
             CodeBlockView(language: language, code: code, scale: scale)
 
-        case .quote(_, let blocks):
+        case .quote(let blocks):
             HStack(alignment: .top, spacing: 12) {
                 RoundedRectangle(cornerRadius: 2)
                     .fill(.tint.opacity(0.5))
                     .frame(width: 3)
                 VStack(alignment: .leading, spacing: 10 * scale) {
-                    ForEach(blocks) { MDBlockView(block: $0, scale: scale) }
+                    ForEach(blocks) { MarkdownBlockView(block: $0, scale: scale) }
                 }
                 .foregroundStyle(.secondary)
             }
             .padding(.vertical, 2)
 
-        case .list(_, let ordered, let items):
+        case .list(let ordered, let items):
             ListBlockView(ordered: ordered, items: items, scale: scale)
 
-        case .table(_, let alignments, let header, let rows):
+        case .table(let alignments, let header, let rows):
             TableBlockView(alignments: alignments, header: header, rows: rows)
 
         case .rule:
             Divider().padding(.vertical, 6 * scale)
 
-        case .image(_, let url, let alt):
+        case .image(let url, let alt):
             VStack(alignment: .leading, spacing: 6) {
                 if url.isFileURL, !FileManager.default.fileExists(atPath: url.path) {
                     // AsyncImage never resolves for a missing local file; say so instead of spinning.
@@ -181,7 +181,7 @@ struct CodeBlockView: View {
 
 struct ListBlockView: View {
     let ordered: Bool
-    let items: [MDListItem]
+    let items: [MarkdownBlock.ListItem]
     let scale: Double
 
     var body: some View {
@@ -192,7 +192,7 @@ struct ListBlockView: View {
                         .font(.system(size: Typography.body * scale))
                         .frame(minWidth: 22, alignment: .trailing)
                     VStack(alignment: .leading, spacing: 6 * scale) {
-                        ForEach(item.blocks) { MDBlockView(block: $0, scale: scale) }
+                        ForEach(item.blocks) { MarkdownBlockView(block: $0, scale: scale) }
                     }
                 }
             }
@@ -200,7 +200,7 @@ struct ListBlockView: View {
     }
 
     @ViewBuilder
-    private func marker(for item: MDListItem) -> some View {
+    private func marker(for item: MarkdownBlock.ListItem) -> some View {
         if let done = item.task {
             Image(systemName: done ? "checkmark.square.fill" : "square")
                 .foregroundStyle(done ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
@@ -216,7 +216,7 @@ struct ListBlockView: View {
 }
 
 struct TableBlockView: View {
-    let alignments: [MDAlignment]
+    let alignments: [MarkdownBlock.ColumnAlignment]
     let header: [AttributedString]
     let rows: [[AttributedString]]
 
@@ -257,7 +257,7 @@ struct TableBlockView: View {
     }
 }
 
-private extension MDAlignment {
+private extension MarkdownBlock.ColumnAlignment {
     var textAlignment: TextAlignment {
         switch self {
         case .leading: .leading

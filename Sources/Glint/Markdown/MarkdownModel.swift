@@ -1,35 +1,33 @@
 import Foundation
 import SwiftUI
 
-enum MDAlignment: Sendable {
-    case leading, center, trailing
-}
-
-struct MDListItem: Identifiable, Sendable {
+/// One block of a parsed document. Ids come from Foundation's presentation intents
+/// (orphan paragraphs get negative ones), so they are unique within a parse.
+struct MarkdownBlock: Identifiable, Sendable {
     let id: Int
-    let ordinal: Int
-    /// nil = ordinary item; true/false = GitHub task list checkbox state
-    let task: Bool?
-    let blocks: [MDBlock]
-}
+    let kind: Kind
 
-indirect enum MDBlock: Identifiable, Sendable {
-    case paragraph(id: Int, text: AttributedString)
-    case heading(id: Int, level: Int, text: AttributedString, slug: String)
-    case code(id: Int, language: String?, code: String)
-    case quote(id: Int, blocks: [MDBlock])
-    case list(id: Int, ordered: Bool, items: [MDListItem])
-    case table(id: Int, alignments: [MDAlignment], header: [AttributedString], rows: [[AttributedString]])
-    case rule(id: Int)
-    case image(id: Int, url: URL, alt: String)
+    enum Kind: Sendable {
+        case paragraph(AttributedString)
+        case heading(level: Int, text: AttributedString, slug: String)
+        case code(language: String?, code: String)
+        case quote([MarkdownBlock])
+        case list(ordered: Bool, items: [ListItem])
+        case table(alignments: [ColumnAlignment], header: [AttributedString], rows: [[AttributedString]])
+        case rule
+        case image(url: URL, alt: String)
+    }
 
-    var id: Int {
-        switch self {
-        case .paragraph(let id, _), .heading(let id, _, _, _), .code(let id, _, _),
-             .quote(let id, _), .list(let id, _, _), .table(let id, _, _, _),
-             .rule(let id), .image(let id, _, _):
-            id
-        }
+    struct ListItem: Identifiable, Sendable {
+        let id: Int
+        let ordinal: Int
+        /// nil = ordinary item; true/false = GitHub task list checkbox state
+        let task: Bool?
+        let blocks: [MarkdownBlock]
+    }
+
+    enum ColumnAlignment: Sendable {
+        case leading, center, trailing
     }
 }
 
@@ -39,13 +37,13 @@ struct MarkdownParser: Sendable {
     let baseURL: URL?
     let bodySize: CGFloat
 
-    func parse(_ markdown: String) -> [MDBlock] {
+    func parse(_ markdown: String) -> [MarkdownBlock] {
         let options = AttributedString.MarkdownParsingOptions(
             interpretedSyntax: .full,
             failurePolicy: .returnPartiallyParsedIfPossible
         )
         guard let attributed = try? AttributedString(markdown: markdown, options: options) else {
-            return [.paragraph(id: 0, text: styled(AttributedString(markdown), size: bodySize))]
+            return [MarkdownBlock(id: 0, kind: .paragraph(styled(AttributedString(markdown), size: bodySize)))]
         }
 
         let root = Node(kind: nil, id: -1)
@@ -93,19 +91,22 @@ struct MarkdownParser: Sendable {
         }
     }
 
-    private func block(from node: Node) -> MDBlock? {
+    private func block(from node: Node) -> MarkdownBlock? {
+        kind(of: node).map { MarkdownBlock(id: node.id, kind: $0) }
+    }
+
+    private func kind(of node: Node) -> MarkdownBlock.Kind? {
         switch node.kind {
         case .paragraph?:
             if let image = soleImage(in: node.text) {
-                return .image(id: node.id, url: image.url, alt: image.alt)
+                return .image(url: image.url, alt: image.alt)
             }
-            return .paragraph(id: node.id, text: styled(node.text, size: bodySize))
+            return .paragraph(styled(node.text, size: bodySize))
 
         case .header(let level)?:
             let size = bodySize * Typography.headingScale(level)
             let plain = String(node.text.characters)
             return .heading(
-                id: node.id,
                 level: level,
                 text: styled(node.text, size: size, weight: level <= 2 ? .bold : .semibold),
                 slug: Self.slug(plain)
@@ -114,20 +115,20 @@ struct MarkdownParser: Sendable {
         case .codeBlock(let language)?:
             var code = String(node.text.characters)
             if code.hasSuffix("\n") { code.removeLast() }
-            return .code(id: node.id, language: language, code: code)
+            return .code(language: language, code: code)
 
         case .blockQuote?:
-            return .quote(id: node.id, blocks: node.children.compactMap(block(from:)))
+            return .quote(node.children.compactMap(block(from:)))
 
         case .orderedList?, .unorderedList?:
             var ordered = false
             if case .orderedList? = node.kind { ordered = true }
-            let items = node.children.compactMap { item -> MDListItem? in
+            let items = node.children.compactMap { item -> MarkdownBlock.ListItem? in
                 guard case .listItem(let ordinal)? = item.kind else { return nil }
                 let task = stripTaskMarker(in: item)
-                return MDListItem(id: item.id, ordinal: ordinal, task: task, blocks: item.children.compactMap(block(from:)))
+                return MarkdownBlock.ListItem(id: item.id, ordinal: ordinal, task: task, blocks: item.children.compactMap(block(from:)))
             }
-            return .list(id: node.id, ordered: ordered, items: items)
+            return .list(ordered: ordered, items: items)
 
         case .table(let columns)?:
             var header: [AttributedString] = []
@@ -146,17 +147,17 @@ struct MarkdownParser: Sendable {
                     break
                 }
             }
-            let alignments: [MDAlignment] = columns.map {
+            let alignments: [MarkdownBlock.ColumnAlignment] = columns.map {
                 switch $0.alignment {
                 case .center: .center
                 case .right: .trailing
                 default: .leading
                 }
             }
-            return .table(id: node.id, alignments: alignments, header: header, rows: rows)
+            return .table(alignments: alignments, header: header, rows: rows)
 
         case .thematicBreak?:
-            return .rule(id: node.id)
+            return .rule
 
         default:
             return nil
