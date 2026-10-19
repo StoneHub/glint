@@ -1,6 +1,11 @@
 import AppKit
 import SwiftUI
 
+/// The rendered side of a Markdown document.
+///
+/// Scale rule for every view in this file: distances between lines and blocks of text scale
+/// with the zoom, because they are part of the type; chrome such as code-block padding, table
+/// cell padding and page margins stays fixed.
 struct MarkdownPreview: View {
     let text: String
     let baseURL: URL?
@@ -38,6 +43,8 @@ struct MarkdownPreview: View {
             })
         }
         .task(id: ParseKey(text: text, scale: scale)) {
+            // The first parse runs at once so the window opens rendered. Later ones (typing in
+            // Split mode) wait a beat, and the task's own cancellation drops stale keystrokes.
             if hasRendered {
                 try? await Task.sleep(for: .milliseconds(150))
                 if Task.isCancelled { return }
@@ -109,19 +116,19 @@ struct MDBlockView: View {
                     Label("Missing image: \(url.lastPathComponent)", systemImage: "photo.badge.exclamationmark")
                         .foregroundStyle(.secondary)
                 } else {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFit()
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    case .failure:
-                        Label("Couldn't load \(url.lastPathComponent)", systemImage: "photo")
-                            .foregroundStyle(.secondary)
-                    default:
-                        ProgressView()
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        case .failure:
+                            Label("Couldn't load \(url.lastPathComponent)", systemImage: "photo")
+                                .foregroundStyle(.secondary)
+                        default:
+                            ProgressView()
+                        }
                     }
-                }
-                .frame(maxHeight: 640 * scale)
+                    .frame(maxHeight: 640 * scale)
                 }
                 if !alt.isEmpty {
                     Text(alt).font(.caption).foregroundStyle(.secondary)
@@ -252,21 +259,13 @@ struct TableBlockView: View {
             .multilineTextAlignment(alignment.textAlignment)
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
-            .frame(maxWidth: .infinity, alignment: alignment.frameAlignment)
+            .frame(maxWidth: .infinity, alignment: Alignment(horizontal: alignment.horizontalAlignment, vertical: .center))
             .gridColumnAlignment(alignment.horizontalAlignment)
     }
 }
 
 private extension MDAlignment {
     var textAlignment: TextAlignment {
-        switch self {
-        case .leading: .leading
-        case .center: .center
-        case .trailing: .trailing
-        }
-    }
-
-    var frameAlignment: Alignment {
         switch self {
         case .leading: .leading
         case .center: .center
