@@ -48,7 +48,7 @@ struct DocumentView: View {
     }
 
     private var editor: some View {
-        EditorView(text: $document.text, fontSize: 13 * scale)
+        EditorView(text: $document.text, fontSize: Typography.editor * scale)
     }
 
     @ViewBuilder
@@ -66,49 +66,63 @@ struct DocumentView: View {
 }
 
 // MARK: - Resizable two-pane split
-//
-// HSplitView is AppKit-backed and mishandles the glass toolbar's safe area for SwiftUI
-// children (content lands under the toolbar). A plain SwiftUI split lays out normally.
 
+/// A hand-rolled split instead of HSplitView. HSplitView is AppKit-backed and, under the glass
+/// toolbar, lays its SwiftUI children out without the toolbar's safe-area inset, so the first
+/// lines of the editor land underneath the toolbar. A plain HStack lays out normally.
 struct SplitPane<Leading: View, Trailing: View>: View {
     @ViewBuilder let leading: () -> Leading
     @ViewBuilder let trailing: () -> Trailing
 
+    /// The leading pane's share of the width, as last dragged.
     @State private var fraction: CGFloat = 0.5
+    /// `fraction` when the current drag began; the drag's translation is added to this.
     @State private var dragStartFraction: CGFloat?
 
     private let minimumWidth: CGFloat = 280
+    private let handleWidth: CGFloat = 9
+    private let coordinateSpace = "split"
 
     var body: some View {
         GeometryReader { geometry in
             let total = geometry.size.width
-            let leadingWidth = min(max(total * fraction, minimumWidth), max(total - minimumWidth, minimumWidth))
             HStack(spacing: 0) {
                 leading()
-                    .frame(width: leadingWidth)
+                    .frame(width: leadingWidth(in: total))
                 Divider()
-                    .overlay {
-                        Color.clear
-                            .frame(width: 9)
-                            .contentShape(Rectangle())
-                            .onHover { inside in
-                                if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
-                            }
-                            .gesture(
-                                DragGesture(minimumDistance: 1, coordinateSpace: .named("split"))
-                                    .onChanged { value in
-                                        if dragStartFraction == nil { dragStartFraction = fraction }
-                                        let start = dragStartFraction ?? fraction
-                                        fraction = min(max(start + value.translation.width / total, 0.15), 0.85)
-                                    }
-                                    .onEnded { _ in dragStartFraction = nil }
-                            )
-                    }
+                    .overlay { handle(total: total) }
                 trailing()
                     .frame(maxWidth: .infinity)
             }
-            .coordinateSpace(name: "split")
+            .coordinateSpace(name: coordinateSpace)
         }
+    }
+
+    /// Both panes keep `minimumWidth`; when the window is too narrow for that, the trailing pane gives way.
+    private func leadingWidth(in total: CGFloat) -> CGFloat {
+        let widest = max(total - minimumWidth, minimumWidth)
+        return min(max(total * fraction, minimumWidth), widest)
+    }
+
+    /// An invisible strip over the one-point divider, so there is something to grab.
+    /// The drag is measured in the HStack's space: the handle itself moves during the drag,
+    /// so its own coordinate space would shift under the pointer.
+    private func handle(total: CGFloat) -> some View {
+        Color.clear
+            .frame(width: handleWidth)
+            .contentShape(Rectangle())
+            .onHover { inside in
+                if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 1, coordinateSpace: .named(coordinateSpace))
+                    .onChanged { value in
+                        let start = dragStartFraction ?? fraction
+                        dragStartFraction = start
+                        fraction = min(max(start + value.translation.width / total, 0.15), 0.85)
+                    }
+                    .onEnded { _ in dragStartFraction = nil }
+            )
     }
 }
 
@@ -153,7 +167,7 @@ struct TextStats {
     init(_ text: String) {
         words = text.split(whereSeparator: \.isWhitespace).count
         characters = text.count
-        lines = text.isEmpty ? 0 : text.reduce(into: 1) { if $1 == "\n" { $0 += 1 } }
+        lines = text.isEmpty ? 0 : 1 + text.count { $0 == "\n" }
     }
 }
 
@@ -166,7 +180,7 @@ struct PlainTextPreview: View {
     var body: some View {
         ScrollView {
             Text(verbatim: text)
-                .font(.system(size: 14 * scale, design: .monospaced))
+                .font(.system(size: Typography.plainText * scale, design: .monospaced))
                 .lineSpacing(2 * scale)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)

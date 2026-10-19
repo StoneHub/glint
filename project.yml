@@ -1,0 +1,50 @@
+# XcodeGen spec for the Quick Look extension only. The app itself is built by `swift build`
+# (Scripts/build.sh); `Scripts/build.sh quicklook` generates build/Glint.xcodeproj from this
+# file, builds the .appex with xcodebuild, and embeds it in build/Glint.app. The extension's
+# Info.plist and entitlements are generated into build/ from the properties below.
+name: Glint
+options:
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+targets:
+  GlintQuickLook:
+    type: app-extension
+    platform: macOS
+    sources:
+      - QuickLook
+      - Sources/Glint/Markdown
+      - Sources/Glint/Typography.swift
+      - Sources/Glint/TextFileDecoding.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.stonehub.glint.quicklook
+        PRODUCT_NAME: GlintQuickLook
+        APPLICATION_EXTENSION_API_ONLY: true
+    info:
+      path: build/GlintQuickLook-Info.plist
+      properties:
+        CFBundleName: GlintQuickLook
+        CFBundleDisplayName: Glint Markdown Preview
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        LSMinimumSystemVersion: "26.0"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.quicklook.preview
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PreviewViewController
+          NSExtensionAttributes:
+            QLSupportedContentTypes:
+              - net.daringfireball.markdown
+            QLSupportsSearchableItems: false
+    entitlements:
+      path: build/GlintQuickLook.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-only: true

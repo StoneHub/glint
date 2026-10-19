@@ -24,7 +24,8 @@ struct GlintApp: App {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    // "Run on demand": close the last document and the app goes away.
+    /// "Run on demand": close the last document and the app goes away. DocumentGroup does
+    /// consult this through NSApplicationDelegateAdaptor; the Settings toggle turns it off.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         Preferences.quitWhenLastWindowCloses
     }
@@ -56,12 +57,18 @@ struct ZoomCommands: Commands {
         CommandGroup(after: .toolbar) {
             Button("Actual Size") { scale = 1.0 }
                 .keyboardShortcut("0", modifiers: .command)
-            Button("Zoom In") { scale = min(2.0, (scale + 0.1).rounded(toPlaces: 1)) }
+            Button("Zoom In") { zoom(by: Preferences.Zoom.step) }
                 .keyboardShortcut("+", modifiers: .command)
-            Button("Zoom Out") { scale = max(0.6, (scale - 0.1).rounded(toPlaces: 1)) }
+            Button("Zoom Out") { zoom(by: -Preferences.Zoom.step) }
                 .keyboardShortcut("-", modifiers: .command)
             Divider()
         }
+    }
+
+    /// Steps in tenths and rounds to one decimal, so repeated zooming never drifts to 1.0999….
+    private func zoom(by delta: Double) {
+        let stepped = ((scale + delta) * 10).rounded() / 10
+        scale = min(max(stepped, Preferences.Zoom.range.lowerBound), Preferences.Zoom.range.upperBound)
     }
 }
 
@@ -72,47 +79,5 @@ struct DefaultOpenerCommands: Commands {
                 Task { await DefaultOpener.makeDefault() }
             }
         }
-    }
-}
-
-private extension Double {
-    func rounded(toPlaces places: Int) -> Double {
-        let factor = pow(10.0, Double(places))
-        return (self * factor).rounded() / factor
-    }
-}
-
-// MARK: - Settings
-
-struct SettingsView: View {
-    @AppStorage(Preferences.Key.quitWhenLastWindowCloses) private var quitOnClose = true
-    @AppStorage(Preferences.Key.markdownMode) private var markdownMode: ViewMode = .preview
-    @AppStorage(Preferences.Key.plainTextMode) private var plainTextMode: ViewMode = .edit
-
-    var body: some View {
-        Form {
-            Section("Open files in") {
-                Picker("Markdown", selection: $markdownMode) {
-                    ForEach(ViewMode.allCases) { Text($0.title).tag($0) }
-                }
-                Picker("Plain text", selection: $plainTextMode) {
-                    ForEach(ViewMode.allCases) { Text($0.title).tag($0) }
-                }
-            }
-            Section("Behavior") {
-                Toggle("Quit when the last window closes", isOn: $quitOnClose)
-            }
-            Section("Finder") {
-                Button("Make Glint the default app for .md and .txt") {
-                    Task { await DefaultOpener.makeDefault() }
-                }
-                Text("Or use Finder › Get Info › Open With › Change All… on any .md or .txt file.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .formStyle(.grouped)
-        .frame(width: 440)
-        .fixedSize(horizontal: false, vertical: true)
     }
 }

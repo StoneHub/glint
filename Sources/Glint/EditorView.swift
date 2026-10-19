@@ -38,6 +38,9 @@ struct EditorView: NSViewRepresentable {
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
 
+        // The binding only differs from the view when the change came from outside the
+        // editor (Revert, a reload). Replacing `string` resets the selection to the end,
+        // so put it back, clipped to whatever still exists.
         if textView.string != text {
             let selection = textView.selectedRanges
             textView.string = text
