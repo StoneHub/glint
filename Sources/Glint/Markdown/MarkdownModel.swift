@@ -111,11 +111,10 @@ struct MarkdownParser: Sendable {
 
         case .header(let level)?:
             let size = bodySize * Typography.headingScale(level)
-            return .heading(
-                level: level,
-                text: styled(node.text, size: size, weight: level <= 2 ? .bold : .semibold),
-                slug: Self.slug(String(node.text.characters))
-            )
+            let text = styled(node.text, size: size, weight: level <= 2 ? .bold : .semibold)
+            // Slug the styled text: emoji have replaced their shortcodes by then, and the
+            // slug drops them the way GitHub does.
+            return .heading(level: level, text: text, slug: Self.slug(String(text.characters)))
 
         case .codeBlock(let language)?:
             // Foundation keeps the newline before the closing fence; the view adds its own padding.
@@ -215,10 +214,13 @@ struct MarkdownParser: Sendable {
 
     /// The inline-style pass: turns each run's `inlinePresentationIntent` into a concrete SwiftUI
     /// font. The intents alone carry no size, so this is where headings get theirs and inline
-    /// code its smaller monospaced face and tint.
+    /// code its smaller monospaced face and tint. Emoji shortcodes are swapped first, while the
+    /// code intent still marks the runs to leave alone.
     private func styled(_ source: AttributedString, size: CGFloat, weight: Font.Weight = .regular) -> AttributedString {
         var result = source
-        for run in source.runs {
+        EmojiShortcodes.replace(in: &result)
+        let runs = result.runs
+        for run in runs {
             let intent = run.inlinePresentationIntent ?? []
             var font: Font
             if intent.contains(.code) {
