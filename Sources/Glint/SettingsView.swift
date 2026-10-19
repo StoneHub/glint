@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @AppStorage(Preferences.Key.quitWhenLastWindowCloses) private var quitOnClose = true
-    @AppStorage(Preferences.Key.markdownMode) private var markdownMode: ViewMode = .preview
-    @AppStorage(Preferences.Key.plainTextMode) private var plainTextMode: ViewMode = .edit
+    @AppStorage(Preferences.Key.quitWhenLastWindowCloses) private var quitOnClose = Preferences.Defaults.quitWhenLastWindowCloses
+    @AppStorage(Preferences.Key.markdownMode) private var markdownMode = Preferences.Defaults.markdownMode
+    @AppStorage(Preferences.Key.plainTextMode) private var plainTextMode = Preferences.Defaults.plainTextMode
 
     var body: some View {
         Form {
