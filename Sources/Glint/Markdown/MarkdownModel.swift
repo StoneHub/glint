@@ -46,7 +46,11 @@ struct MarkdownParser: Sendable {
             return [MarkdownBlock(id: 0, kind: .paragraph(styled(AttributedString(markdown), size: bodySize)))]
         }
 
+        // Each run carries the path of blocks it sits in, innermost first. Walking the path
+        // from the outside in, a component whose identity matches the last child continues
+        // that block; anything else starts a sibling. Foundation's identities count up from 1.
         let root = Node(kind: nil, id: -1)
+        var orphanParagraph: Node?
         var orphanCount = 0
         for run in attributed.runs {
             var node = root
@@ -60,15 +64,18 @@ struct MarkdownParser: Sendable {
                 }
             }
             if node === root {
-                // Inline-only content with no block intent: treat as a paragraph.
-                if let last = root.children.last, last.id < -1 {
-                    node = last
+                // Inline-only input has no block intent at all; collect it in a synthetic
+                // paragraph. Their ids count down from -2 so they never collide with Foundation's.
+                if let open = orphanParagraph {
+                    node = open
                 } else {
                     orphanCount += 1
-                    let child = Node(kind: .paragraph, id: -1 - orphanCount)
-                    root.children.append(child)
-                    node = child
+                    node = Node(kind: .paragraph, id: -1 - orphanCount)
+                    root.children.append(node)
+                    orphanParagraph = node
                 }
+            } else {
+                orphanParagraph = nil
             }
             var piece = AttributedString(attributed[run.range])
             piece.presentationIntent = nil
@@ -121,8 +128,7 @@ struct MarkdownParser: Sendable {
             return .quote(node.children.compactMap(block(from:)))
 
         case .orderedList?, .unorderedList?:
-            var ordered = false
-            if case .orderedList? = node.kind { ordered = true }
+            let ordered = node.kind == .orderedList
             let items = node.children.compactMap { item -> MarkdownBlock.ListItem? in
                 guard case .listItem(let ordinal)? = item.kind else { return nil }
                 let task = stripTaskMarker(in: item)
@@ -166,23 +172,21 @@ struct MarkdownParser: Sendable {
 
     // MARK: Helpers
 
-    /// `- [ ] foo` / `- [x] foo` are not parsed by Foundation; detect and strip the marker.
+    private static let taskMarkers: [(prefix: String, done: Bool)] = [("[ ] ", false), ("[x] ", true), ("[X] ", true)]
+
+    /// Foundation doesn't know GitHub task lists: `- [x] foo` arrives as a list item whose first
+    /// paragraph starts with the literal "[x] ". Strip the marker and report its state.
     private func stripTaskMarker(in item: Node) -> Bool? {
         guard let first = item.children.first, case .paragraph? = first.kind else { return nil }
         let plain = String(first.text.characters)
-        let state: Bool?
-        if plain.hasPrefix("[ ] ") {
-            state = false
-        } else if plain.hasPrefix("[x] ") || plain.hasPrefix("[X] ") {
-            state = true
-        } else {
-            return nil
-        }
-        let end = first.text.index(first.text.startIndex, offsetByCharacters: 4)
+        guard let marker = Self.taskMarkers.first(where: { plain.hasPrefix($0.prefix) }) else { return nil }
+        let end = first.text.index(first.text.startIndex, offsetByCharacters: marker.prefix.count)
         first.text.removeSubrange(first.text.startIndex..<end)
-        return state
+        return marker.done
     }
 
+    /// A paragraph that is nothing but one image becomes an image block. Relative paths
+    /// resolve against the document's folder.
     private func soleImage(in text: AttributedString) -> (url: URL, alt: String)? {
         let runs = Array(text.runs)
         guard runs.count == 1, let imageURL = runs[0].imageURL else { return nil }
