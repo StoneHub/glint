@@ -7,7 +7,7 @@ struct PlainTextPreview: View {
     var body: some View {
         ScrollView {
             Text(verbatim: text)
-                .font(.system(size: 14 * scale, design: .monospaced))
+                .font(.system(size: Typography.plainText * scale, design: .monospaced))
                 .lineSpacing(2 * scale)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)

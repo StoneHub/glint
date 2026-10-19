@@ -22,7 +22,7 @@ struct MarkdownPreview: View {
                         MDBlockView(block: block, scale: scale)
                     }
                 }
-                .frame(maxWidth: 760 * scale, alignment: .leading)
+                .frame(maxWidth: Typography.measure * scale, alignment: .leading)
                 .padding(.horizontal, 36)
                 .padding(.top, 28)
                 .padding(.bottom, 72)
@@ -42,7 +42,7 @@ struct MarkdownPreview: View {
                 try? await Task.sleep(for: .milliseconds(150))
                 if Task.isCancelled { return }
             }
-            let parser = MarkdownParser(baseURL: baseURL, bodySize: 15 * scale)
+            let parser = MarkdownParser(baseURL: baseURL, bodySize: Typography.body * scale)
             let source = text
             let result = await Task.detached(priority: .userInitiated) { parser.parse(source) }.value
             if Task.isCancelled { return }
@@ -141,7 +141,7 @@ struct CodeBlockView: View {
     var body: some View {
         ScrollView(.horizontal) {
             Text(verbatim: code)
-                .font(.system(size: 13 * scale, design: .monospaced))
+                .font(.system(size: Typography.code * scale, design: .monospaced))
                 .lineSpacing(2 * scale)
                 .textSelection(.enabled)
                 .padding(14)
@@ -189,7 +189,7 @@ struct ListBlockView: View {
             ForEach(items) { item in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     marker(for: item)
-                        .font(.system(size: 15 * scale))
+                        .font(.system(size: Typography.body * scale))
                         .frame(minWidth: 22, alignment: .trailing)
                     VStack(alignment: .leading, spacing: 6 * scale) {
                         ForEach(item.blocks) { MDBlockView(block: $0, scale: scale) }

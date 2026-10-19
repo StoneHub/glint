@@ -48,7 +48,7 @@ struct DocumentView: View {
     }
 
     private var editor: some View {
-        EditorView(text: $document.text, fontSize: 13 * scale)
+        EditorView(text: $document.text, fontSize: Typography.editor * scale)
     }
 
     @ViewBuilder
