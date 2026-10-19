@@ -201,24 +201,32 @@ struct MarkdownParser: Sendable {
         return (resolved, String(text.characters))
     }
 
+    /// The inline pass: bakes a SwiftUI font into every run from its inline intent, marks
+    /// inline code, and swaps `:emoji:` shortcodes in prose runs. Pieces are appended one run
+    /// at a time because a replacement changes the text length.
     private func styled(_ source: AttributedString, size: CGFloat, weight: Font.Weight = .regular) -> AttributedString {
-        var result = source
+        var result = AttributedString()
         for run in source.runs {
             let intent = run.inlinePresentationIntent ?? []
+            var piece: AttributedString
             var font: Font
             if intent.contains(.code) {
+                piece = AttributedString(source[run.range])
+                piece.swiftUI.backgroundColor = Color.primary.opacity(0.07)
                 font = .system(size: size * Typography.inlineCodeRatio, weight: weight, design: .monospaced)
-                result[run.range].swiftUI.backgroundColor = Color.primary.opacity(0.07)
             } else {
+                let text = EmojiShortcodes.replacing(in: String(source[run.range].characters))
+                piece = AttributedString(text, attributes: run.attributes)
                 font = .system(size: size, weight: weight)
             }
             if intent.contains(.stronglyEmphasized) { font = font.bold() }
             if intent.contains(.emphasized) { font = font.italic() }
             if intent.contains(.strikethrough) {
-                result[run.range].swiftUI.strikethroughStyle = .single
+                piece.swiftUI.strikethroughStyle = .single
             }
-            result[run.range].swiftUI.font = font
-            result[run.range].inlinePresentationIntent = nil
+            piece.swiftUI.font = font
+            piece.inlinePresentationIntent = nil
+            result.append(piece)
         }
         return result
     }
