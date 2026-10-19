@@ -56,9 +56,9 @@ struct ZoomCommands: Commands {
         CommandGroup(after: .toolbar) {
             Button("Actual Size") { scale = 1.0 }
                 .keyboardShortcut("0", modifiers: .command)
-            Button("Zoom In") { scale = min(2.0, (scale + 0.1).rounded(toPlaces: 1)) }
+            Button("Zoom In") { scale = Zoom.stepped(scale, by: 1) }
                 .keyboardShortcut("+", modifiers: .command)
-            Button("Zoom Out") { scale = max(0.6, (scale - 0.1).rounded(toPlaces: 1)) }
+            Button("Zoom Out") { scale = Zoom.stepped(scale, by: -1) }
                 .keyboardShortcut("-", modifiers: .command)
             Divider()
         }
@@ -75,10 +75,15 @@ struct DefaultOpenerCommands: Commands {
     }
 }
 
-private extension Double {
-    func rounded(toPlaces places: Int) -> Double {
-        let factor = pow(10.0, Double(places))
-        return (self * factor).rounded() / factor
+/// Zoom moves in 10% steps between 60% and 200%. Counting whole steps and dividing back
+/// keeps the stored scale at clean values (0.7, not 0.7000000000000001).
+enum Zoom {
+    static let range = 0.6...2.0
+    static let stepsPerUnit = 10.0
+
+    static func stepped(_ scale: Double, by direction: Int) -> Double {
+        let steps = (scale * stepsPerUnit).rounded() + Double(direction)
+        return min(max(steps / stepsPerUnit, range.lowerBound), range.upperBound)
     }
 }
 
