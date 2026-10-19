@@ -102,7 +102,7 @@ struct MarkdownParser: Sendable {
             return .paragraph(id: node.id, text: styled(node.text, size: bodySize))
 
         case .header(let level)?:
-            let size = bodySize * Self.headingScale(level)
+            let size = bodySize * Typography.headingScale(level)
             let plain = String(node.text.characters)
             return .heading(
                 id: node.id,
@@ -139,9 +139,9 @@ struct MarkdownParser: Sendable {
                 }
                 switch row.kind {
                 case .tableHeaderRow?:
-                    header = cells.map { styled($0, size: bodySize * 0.93, weight: .semibold) }
+                    header = cells.map { styled($0, size: bodySize * Typography.tableCellRatio, weight: .semibold) }
                 case .tableRow?:
-                    rows.append(cells.map { styled($0, size: bodySize * 0.93) })
+                    rows.append(cells.map { styled($0, size: bodySize * Typography.tableCellRatio) })
                 default:
                     break
                 }
@@ -200,7 +200,7 @@ struct MarkdownParser: Sendable {
             let intent = run.inlinePresentationIntent ?? []
             var font: Font
             if intent.contains(.code) {
-                font = .system(size: size * 0.9, weight: weight, design: .monospaced)
+                font = .system(size: size * Typography.inlineCodeRatio, weight: weight, design: .monospaced)
                 result[run.range].swiftUI.backgroundColor = Color.primary.opacity(0.07)
             } else {
                 font = .system(size: size, weight: weight)
@@ -214,17 +214,6 @@ struct MarkdownParser: Sendable {
             result[run.range].inlinePresentationIntent = nil
         }
         return result
-    }
-
-    private static func headingScale(_ level: Int) -> CGFloat {
-        switch level {
-        case 1: 2.0
-        case 2: 1.5
-        case 3: 1.25
-        case 4: 1.1
-        case 5: 1.0
-        default: 0.9
-        }
     }
 
     /// GitHub-style anchor: lowercase, drop punctuation, spaces → hyphens.
