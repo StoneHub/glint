@@ -22,9 +22,12 @@ struct GlintApp: App {
     }
 }
 
+/// "Run on demand": close the last document and the app goes away.
+///
+/// DocumentGroup does consult this through the delegate adaptor: with the preference on, the
+/// process exits as the last window closes; with it off, the app stays up with no windows.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    // "Run on demand": close the last document and the app goes away.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         Preferences.quitWhenLastWindowCloses
     }
