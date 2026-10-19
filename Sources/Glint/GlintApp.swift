@@ -24,7 +24,8 @@ struct GlintApp: App {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    // "Run on demand": close the last document and the app goes away.
+    /// "Run on demand": close the last document and the app goes away. DocumentGroup does
+    /// consult this through NSApplicationDelegateAdaptor; the Settings toggle turns it off.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         Preferences.quitWhenLastWindowCloses
     }
