@@ -1,0 +1,46 @@
+# XcodeGen spec for the Xcode build: the app plus its Quick Look extension.
+# `swift build` / Scripts/build.sh need none of this; see Scripts/build.sh xcode.
+name: Glint
+options:
+  bundleIdPrefix: com.stonehub
+  deploymentTarget:
+    macOS: "26.0"
+  xcodeVersion: "27.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+    GENERATE_INFOPLIST_FILE: NO
+    MARKETING_VERSION: 0.1.0
+    CURRENT_PROJECT_VERSION: 1
+targets:
+  Glint:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/Glint
+      - path: build/AppIcon.icns
+        buildPhase: resources
+    settings:
+      base:
+        INFOPLIST_FILE: Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.stonehub.glint
+    dependencies:
+      - target: GlintQuickLook
+        embed: true
+  GlintQuickLook:
+    type: app-extension
+    platform: macOS
+    sources:
+      - Sources/GlintQuickLook
+      - Sources/Glint/Markdown
+      - Sources/Glint/Typography.swift
+      - Sources/Glint/TextDocument.swift
+    settings:
+      base:
+        INFOPLIST_FILE: Resources/GlintQuickLook-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/GlintQuickLook.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.stonehub.glint.quicklook

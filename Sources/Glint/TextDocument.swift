@@ -30,7 +30,8 @@ struct TextDocument: FileDocument {
 
     /// Opening a text file must not fail on encoding: UTF-8 first, then Foundation's sniffing
     /// for legacy encodings, and as a last resort UTF-8 with replacement characters.
-    private static func decode(_ data: Data) -> String {
+    /// Shared with the Quick Look extension.
+    static func decode(_ data: Data) -> String {
         if let utf8 = String(data: data, encoding: .utf8) {
             return utf8
         }
