@@ -59,14 +59,14 @@ struct MDBlockView: View {
     let scale: Double
 
     var body: some View {
-        switch block {
-        case .paragraph(_, let text):
+        switch block.content {
+        case .paragraph(let text):
             Text(text)
                 .lineSpacing(3 * scale)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
 
-        case .heading(_, let level, let text, let slug):
+        case .heading(let level, let text, let slug):
             VStack(alignment: .leading, spacing: 6) {
                 Text(text)
                     .textSelection(.enabled)
@@ -78,10 +78,10 @@ struct MDBlockView: View {
             .padding(.top, level <= 2 ? 12 * scale : 4 * scale)
             .id(slug)
 
-        case .code(_, let language, let code):
+        case .code(let language, let code):
             CodeBlockView(language: language, code: code, scale: scale)
 
-        case .quote(_, let blocks):
+        case .quote(let blocks):
             HStack(alignment: .top, spacing: 12) {
                 RoundedRectangle(cornerRadius: 2)
                     .fill(.tint.opacity(0.5))
@@ -93,16 +93,16 @@ struct MDBlockView: View {
             }
             .padding(.vertical, 2)
 
-        case .list(_, let ordered, let items):
+        case .list(let ordered, let items):
             ListBlockView(ordered: ordered, items: items, scale: scale)
 
-        case .table(_, let alignments, let header, let rows):
+        case .table(let alignments, let header, let rows):
             TableBlockView(alignments: alignments, header: header, rows: rows)
 
         case .rule:
             Divider().padding(.vertical, 6 * scale)
 
-        case .image(_, let url, let alt):
+        case .image(let url, let alt):
             VStack(alignment: .leading, spacing: 6) {
                 if url.isFileURL, !FileManager.default.fileExists(atPath: url.path) {
                     // AsyncImage never resolves for a missing local file; say so instead of spinning.

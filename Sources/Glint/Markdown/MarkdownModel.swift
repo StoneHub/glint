@@ -13,23 +13,20 @@ struct MDListItem: Identifiable, Sendable {
     let blocks: [MDBlock]
 }
 
-indirect enum MDBlock: Identifiable, Sendable {
-    case paragraph(id: Int, text: AttributedString)
-    case heading(id: Int, level: Int, text: AttributedString, slug: String)
-    case code(id: Int, language: String?, code: String)
-    case quote(id: Int, blocks: [MDBlock])
-    case list(id: Int, ordered: Bool, items: [MDListItem])
-    case table(id: Int, alignments: [MDAlignment], header: [AttributedString], rows: [[AttributedString]])
-    case rule(id: Int)
-    case image(id: Int, url: URL, alt: String)
+struct MDBlock: Identifiable, Sendable {
+    /// Foundation's block identity for the run, or a negative synthetic id (see `parse`).
+    let id: Int
+    let content: Content
 
-    var id: Int {
-        switch self {
-        case .paragraph(let id, _), .heading(let id, _, _, _), .code(let id, _, _),
-             .quote(let id, _), .list(let id, _, _), .table(let id, _, _, _),
-             .rule(let id), .image(let id, _, _):
-            id
-        }
+    indirect enum Content: Sendable {
+        case paragraph(AttributedString)
+        case heading(level: Int, text: AttributedString, slug: String)
+        case code(language: String?, code: String)
+        case quote([MDBlock])
+        case list(ordered: Bool, items: [MDListItem])
+        case table(alignments: [MDAlignment], header: [AttributedString], rows: [[AttributedString]])
+        case rule
+        case image(url: URL, alt: String)
     }
 }
 
@@ -45,7 +42,7 @@ struct MarkdownParser: Sendable {
             failurePolicy: .returnPartiallyParsedIfPossible
         )
         guard let attributed = try? AttributedString(markdown: markdown, options: options) else {
-            return [.paragraph(id: 0, text: styled(AttributedString(markdown), size: bodySize))]
+            return [MDBlock(id: 0, content: .paragraph(styled(AttributedString(markdown), size: bodySize)))]
         }
 
         let root = Node(kind: nil, id: -1)
@@ -94,18 +91,21 @@ struct MarkdownParser: Sendable {
     }
 
     private func block(from node: Node) -> MDBlock? {
+        content(of: node).map { MDBlock(id: node.id, content: $0) }
+    }
+
+    private func content(of node: Node) -> MDBlock.Content? {
         switch node.kind {
         case .paragraph?:
             if let image = soleImage(in: node.text) {
-                return .image(id: node.id, url: image.url, alt: image.alt)
+                return .image(url: image.url, alt: image.alt)
             }
-            return .paragraph(id: node.id, text: styled(node.text, size: bodySize))
+            return .paragraph(styled(node.text, size: bodySize))
 
         case .header(let level)?:
             let size = bodySize * Self.headingScale(level)
             let plain = String(node.text.characters)
             return .heading(
-                id: node.id,
                 level: level,
                 text: styled(node.text, size: size, weight: level <= 2 ? .bold : .semibold),
                 slug: Self.slug(plain)
@@ -114,10 +114,10 @@ struct MarkdownParser: Sendable {
         case .codeBlock(let language)?:
             var code = String(node.text.characters)
             if code.hasSuffix("\n") { code.removeLast() }
-            return .code(id: node.id, language: language, code: code)
+            return .code(language: language, code: code)
 
         case .blockQuote?:
-            return .quote(id: node.id, blocks: node.children.compactMap(block(from:)))
+            return .quote(node.children.compactMap(block(from:)))
 
         case .orderedList?, .unorderedList?:
             var ordered = false
@@ -127,7 +127,7 @@ struct MarkdownParser: Sendable {
                 let task = stripTaskMarker(in: item)
                 return MDListItem(id: item.id, ordinal: ordinal, task: task, blocks: item.children.compactMap(block(from:)))
             }
-            return .list(id: node.id, ordered: ordered, items: items)
+            return .list(ordered: ordered, items: items)
 
         case .table(let columns)?:
             var header: [AttributedString] = []
@@ -153,10 +153,10 @@ struct MarkdownParser: Sendable {
                 default: .leading
                 }
             }
-            return .table(id: node.id, alignments: alignments, header: header, rows: rows)
+            return .table(alignments: alignments, header: header, rows: rows)
 
         case .thematicBreak?:
-            return .rule(id: node.id)
+            return .rule
 
         default:
             return nil
