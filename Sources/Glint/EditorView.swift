@@ -4,7 +4,7 @@ import SwiftUI
 /// Thin NSTextView wrapper: proper undo, ⌘F find bar, and no smart-quote/dash mangling of Markdown.
 struct EditorView: NSViewRepresentable {
     @Binding var text: String
-    var fontSize: CGFloat
+    let fontSize: CGFloat
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text)
@@ -38,6 +38,9 @@ struct EditorView: NSViewRepresentable {
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
 
+        // Typing flows out through the delegate, so the strings already match on that path.
+        // They differ when the text changes from outside (undo, revert, another window); put
+        // the new text in and keep the selection where it was, clipped to what still exists.
         if textView.string != text {
             let selection = textView.selectedRanges
             textView.string = text
