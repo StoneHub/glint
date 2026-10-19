@@ -103,12 +103,24 @@ struct MarkdownBlockView: View {
             Divider().padding(.vertical, 6 * scale)
 
         case .image(let url, let alt):
-            VStack(alignment: .leading, spacing: 6) {
-                if url.isFileURL, !FileManager.default.fileExists(atPath: url.path) {
-                    // AsyncImage never resolves for a missing local file; say so instead of spinning.
-                    Label("Missing image: \(url.lastPathComponent)", systemImage: "photo.badge.exclamationmark")
-                        .foregroundStyle(.secondary)
-                } else {
+            ImageBlockView(url: url, alt: alt, scale: scale)
+        }
+    }
+}
+
+struct ImageBlockView: View {
+    let url: URL
+    let alt: String
+    let scale: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if url.isFileURL, !FileManager.default.fileExists(atPath: url.path) {
+                // AsyncImage stays in its loading phase forever for a missing local file,
+                // so check up front and say so instead of showing a spinner.
+                Label("Missing image: \(url.lastPathComponent)", systemImage: "photo.badge.exclamationmark")
+                    .foregroundStyle(.secondary)
+            } else {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):
@@ -122,10 +134,9 @@ struct MarkdownBlockView: View {
                     }
                 }
                 .frame(maxHeight: 640 * scale)
-                }
-                if !alt.isEmpty {
-                    Text(alt).font(.caption).foregroundStyle(.secondary)
-                }
+            }
+            if !alt.isEmpty {
+                Text(alt).font(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -266,7 +277,7 @@ private extension MarkdownBlock.ColumnAlignment {
         }
     }
 
-    var frameAlignment: Alignment {
+    var horizontalAlignment: HorizontalAlignment {
         switch self {
         case .leading: .leading
         case .center: .center
@@ -274,11 +285,7 @@ private extension MarkdownBlock.ColumnAlignment {
         }
     }
 
-    var horizontalAlignment: HorizontalAlignment {
-        switch self {
-        case .leading: .leading
-        case .center: .center
-        case .trailing: .trailing
-        }
+    var frameAlignment: Alignment {
+        Alignment(horizontal: horizontalAlignment, vertical: .center)
     }
 }
