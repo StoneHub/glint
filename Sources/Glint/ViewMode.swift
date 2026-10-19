@@ -13,14 +13,6 @@ enum ViewMode: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var symbol: String {
-        switch self {
-        case .edit: "pencil"
-        case .split: "rectangle.split.2x1"
-        case .preview: "doc.richtext"
-        }
-    }
-
     var shortcut: KeyEquivalent {
         switch self {
         case .edit: "1"
@@ -30,7 +22,7 @@ enum ViewMode: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-struct ViewModeFocusedKey: FocusedValueKey {
+private struct ViewModeFocusedKey: FocusedValueKey {
     typealias Value = Binding<ViewMode>
 }
 
