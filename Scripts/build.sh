@@ -5,6 +5,7 @@
 #   Scripts/build.sh install    build, copy to ~/Applications, register with Launch Services
 #   Scripts/build.sh run [file] build and open (optionally with a file)
 #   Scripts/build.sh icon       regenerate build/AppIcon.icns
+#   Scripts/build.sh quicklook  build, then add the Quick Look extension (needs Xcode and XcodeGen)
 #
 # Nothing here deletes recursively; bundles are overwritten in place with ditto.
 # To start fresh: delete build/ and .build/ yourself.
@@ -15,6 +16,7 @@ APP=Glint
 BUILD=build
 CONF=${CONF:-release}
 BUNDLE="$BUILD/$APP.app"
+PLUGINS="$BUNDLE/Contents/PlugIns"
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
 icon() {
@@ -39,20 +41,47 @@ build() {
   echo "built $BUNDLE"
 }
 
+# A plain build leaves an earlier 'quicklook' extension in place (nothing here deletes); say so.
+note_kept_extension() {
+  if [[ -d "$PLUGINS" ]]; then
+    echo "kept the Quick Look extension from an earlier 'quicklook' build (plain 'build' does not rebuild it)"
+  fi
+}
+
+# The extension is an Xcode app-extension target; XcodeGen writes Glint.xcodeproj (gitignored)
+# from project.yml, xcodebuild produces the ad-hoc-signed .appex, and it is embedded in the
+# package-built app. The app is then re-signed over the already-signed extension.
+quicklook() {
+  build
+  xcodegen generate --spec project.yml
+  xcodebuild -project "$APP.xcodeproj" -scheme GlintQuickLook -configuration Release \
+    -destination "platform=macOS" -derivedDataPath "$BUILD/DerivedData" -quiet build
+  mkdir -p "$PLUGINS"
+  ditto "$BUILD/DerivedData/Build/Products/Release/GlintQuickLook.appex" "$PLUGINS/GlintQuickLook.appex"
+  codesign --force --sign - "$BUNDLE"
+  echo "embedded $PLUGINS/GlintQuickLook.appex"
+}
+
 install() {
   build
+  note_kept_extension
   local dest="$HOME/Applications/$APP.app"
   mkdir -p "$HOME/Applications"
   ditto "$BUNDLE" "$dest"
   "$LSREGISTER" -f "$dest"
+  if [[ -d "$dest/Contents/PlugIns/GlintQuickLook.appex" ]]; then
+    pluginkit -a "$dest/Contents/PlugIns/GlintQuickLook.appex"
+    echo "registered the Quick Look extension; try: qlmanage -p README.md"
+  fi
   echo "installed $dest"
   echo "To make it the default opener: Glint menu → “Make Glint the Default for Markdown & Text…”"
 }
 
 case "${1:-build}" in
-  build)   build ;;
-  install) install ;;
-  run)     build; shift; open -a "$PWD/$BUNDLE" "$@" ;;
-  icon)    rm -f "$BUILD/AppIcon.icns"; icon ;;
-  *)       echo "usage: $0 [build|install|run [file]|icon]" >&2; exit 2 ;;
+  build)     build; note_kept_extension ;;
+  quicklook) quicklook ;;
+  install)   install ;;
+  run)       build; note_kept_extension; shift; open -a "$PWD/$BUNDLE" "$@" ;;
+  icon)      rm -f "$BUILD/AppIcon.icns"; icon ;;
+  *)         echo "usage: $0 [build|quicklook|install|run [file]|icon]" >&2; exit 2 ;;
 esac

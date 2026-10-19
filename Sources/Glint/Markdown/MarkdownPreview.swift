@@ -115,10 +115,14 @@ struct ImageBlockView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            // AsyncImage stays in its loading phase forever for a local file it can't open,
+            // so check up front and say so instead of showing a spinner. "Can't read" is the
+            // Quick Look case: the sandbox allows the previewed file only, not its neighbours.
             if url.isFileURL, !FileManager.default.fileExists(atPath: url.path) {
-                // AsyncImage stays in its loading phase forever for a missing local file,
-                // so check up front and say so instead of showing a spinner.
                 Label("Missing image: \(url.lastPathComponent)", systemImage: "photo.badge.exclamationmark")
+                    .foregroundStyle(.secondary)
+            } else if url.isFileURL, !FileManager.default.isReadableFile(atPath: url.path) {
+                Label("Can't read \(url.lastPathComponent) here", systemImage: "photo")
                     .foregroundStyle(.secondary)
             } else {
                 AsyncImage(url: url) { phase in
