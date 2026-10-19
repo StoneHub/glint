@@ -167,7 +167,7 @@ struct TextStats {
     init(_ text: String) {
         words = text.split(whereSeparator: \.isWhitespace).count
         characters = text.count
-        lines = text.isEmpty ? 0 : text.reduce(into: 1) { if $1 == "\n" { $0 += 1 } }
+        lines = text.isEmpty ? 0 : 1 + text.count { $0 == "\n" }
     }
 }
 
