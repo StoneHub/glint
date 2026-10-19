@@ -56,12 +56,18 @@ struct ZoomCommands: Commands {
         CommandGroup(after: .toolbar) {
             Button("Actual Size") { scale = 1.0 }
                 .keyboardShortcut("0", modifiers: .command)
-            Button("Zoom In") { scale = min(2.0, (scale + 0.1).rounded(toPlaces: 1)) }
+            Button("Zoom In") { zoom(by: Preferences.Zoom.step) }
                 .keyboardShortcut("+", modifiers: .command)
-            Button("Zoom Out") { scale = max(0.6, (scale - 0.1).rounded(toPlaces: 1)) }
+            Button("Zoom Out") { zoom(by: -Preferences.Zoom.step) }
                 .keyboardShortcut("-", modifiers: .command)
             Divider()
         }
+    }
+
+    /// Steps in tenths and rounds to one decimal, so repeated zooming never drifts to 1.0999….
+    private func zoom(by delta: Double) {
+        let stepped = ((scale + delta) * 10).rounded() / 10
+        scale = min(max(stepped, Preferences.Zoom.range.lowerBound), Preferences.Zoom.range.upperBound)
     }
 }
 
@@ -72,12 +78,5 @@ struct DefaultOpenerCommands: Commands {
                 Task { await DefaultOpener.makeDefault() }
             }
         }
-    }
-}
-
-private extension Double {
-    func rounded(toPlaces places: Int) -> Double {
-        let factor = pow(10.0, Double(places))
-        return (self * factor).rounded() / factor
     }
 }

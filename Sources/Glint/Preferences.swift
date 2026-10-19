@@ -8,6 +8,11 @@ enum Preferences {
         static let plainTextMode = "plainTextMode"
     }
 
+    enum Zoom {
+        static let step = 0.1
+        static let range = 0.6...2.0
+    }
+
     static let markdownExtensions: Set<String> = ["md", "markdown", "mdown", "mkd", "mkdn", "mdtext", "mdtxt"]
 
     static var quitWhenLastWindowCloses: Bool {
