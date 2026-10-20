@@ -6,6 +6,10 @@ close — the app quits with its last window. It shows as **M↓**, the mark on 
 Dock, menu bar, Finder and About panel, and the bundle is `M↓.app`; the executable, the
 package and the bundle identifier keep the name Glint.
 
+![Ticking task boxes in Split mode: each click flips the box's [ ] in the source](docs/checkbox-demo.gif)
+
+Open `Samples/Tour.md` for a tour of everything the preview renders.
+
 ## Build and install
 
 ```bash
