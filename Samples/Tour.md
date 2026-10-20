@@ -13,7 +13,7 @@ Press **⌘2** for Split and tick a box below.
 ## Text
 
 **Bold**, *italic*, ***both***, ~~struck out~~ and `inline code`.
-[Links](https://github.com/StoneHub/glint) open in your browser, and
+[Links](https://github.com/StoneHub/mdown) open in your browser, and
 anchors scroll within the page: [jump to Tables](#tables).
 
 GitHub shortcodes become emoji: :rocket: :tada: :coffee: :heart:

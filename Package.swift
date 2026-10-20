@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "Glint",
+    name: "MDown",
     platforms: [.macOS("26.0")],
     targets: [
         .executableTarget(
-            name: "Glint",
-            path: "Sources/Glint"
+            name: "MDown",
+            path: "Sources/MDown"
         )
     ]
 )

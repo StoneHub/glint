@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-APP=Glint          # executable and SwiftPM product
+APP=MDown          # executable and SwiftPM product
 BUNDLE_NAME="M↓"   # the folder carries the display name, like the Dock and the menu bar
 BUILD=build
 CONF=${CONF:-release}
@@ -49,18 +49,18 @@ note_kept_extension() {
   fi
 }
 
-# The extension is an Xcode app-extension target; XcodeGen writes Glint.xcodeproj (gitignored)
+# The extension is an Xcode app-extension target; XcodeGen writes MDown.xcodeproj (gitignored)
 # from project.yml, xcodebuild produces the ad-hoc-signed .appex, and it is embedded in the
 # package-built app. The app is then re-signed over the already-signed extension.
 quicklook() {
   build
   xcodegen generate --spec project.yml
-  xcodebuild -project "$APP.xcodeproj" -scheme GlintQuickLook -configuration Release \
+  xcodebuild -project "$APP.xcodeproj" -scheme MDownQuickLook -configuration Release \
     -destination "platform=macOS" -derivedDataPath "$BUILD/DerivedData" -quiet build
   mkdir -p "$PLUGINS"
-  ditto "$BUILD/DerivedData/Build/Products/Release/GlintQuickLook.appex" "$PLUGINS/GlintQuickLook.appex"
+  ditto "$BUILD/DerivedData/Build/Products/Release/MDownQuickLook.appex" "$PLUGINS/MDownQuickLook.appex"
   codesign --force --sign - "$BUNDLE"
-  echo "embedded $PLUGINS/GlintQuickLook.appex"
+  echo "embedded $PLUGINS/MDownQuickLook.appex"
 }
 
 install() {
@@ -75,8 +75,8 @@ install() {
   xattr -w com.apple.metadata:kMDItemFinderComment \
     '<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><string>mdown · M↓ Markdown viewer and editor</string></plist>' "$dest"
   mdimport "$dest"
-  if [[ -d "$dest/Contents/PlugIns/GlintQuickLook.appex" ]]; then
-    pluginkit -a "$dest/Contents/PlugIns/GlintQuickLook.appex"
+  if [[ -d "$dest/Contents/PlugIns/MDownQuickLook.appex" ]]; then
+    pluginkit -a "$dest/Contents/PlugIns/MDownQuickLook.appex"
     echo "registered the Quick Look extension; try: qlmanage -p README.md"
   fi
   echo "installed $dest (Spotlight: type mdown)"
