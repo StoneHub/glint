@@ -2,7 +2,8 @@
 
 A small, run-on-demand Markdown and plain-text viewer/editor for macOS 26+, built with
 SwiftUI and Liquid Glass. Open a `.md` or `.txt`, read it rendered, flip to the editor, save,
-close — the app quits with its last window.
+close — the app quits with its last window. It shows as **M↓**, the mark on its icon, in the
+Dock, menu bar, Finder and About panel; the bundle is still `Glint.app`.
 
 ## Build and install
 
