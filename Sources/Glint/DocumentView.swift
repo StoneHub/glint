@@ -6,6 +6,7 @@ struct DocumentView: View {
 
     @State private var mode: ViewMode
     @AppStorage(Preferences.Key.previewScale) private var scale = 1.0
+    @Environment(\.undoManager) private var undoManager
 
     init(document: Binding<TextDocument>, fileURL: URL?) {
         _document = document
@@ -57,11 +58,31 @@ struct DocumentView: View {
             MarkdownPreview(
                 text: document.text,
                 baseURL: fileURL?.deletingLastPathComponent(),
-                scale: scale
+                scale: scale,
+                onToggleTask: toggleTask
             )
         } else {
             PlainTextPreview(text: document.text, scale: scale)
         }
+    }
+
+    /// A clicked preview checkbox flips its `[ ]` / `[x]` in the source.
+    private func toggleTask(_ index: Int) {
+        guard let toggled = MarkdownParser.togglingTask(index, in: document.text) else { return }
+        Self.replaceText(of: $document, with: toggled, undoManager: undoManager)
+    }
+
+    /// Writes through the binding (which marks the document dirty) and registers the undo step.
+    /// Undoing writes the old text back the same way, which registers the redo. The undo manager
+    /// is the document's, shared with the editor's typing.
+    private static func replaceText(of document: Binding<TextDocument>, with text: String, undoManager: UndoManager?) {
+        let previous = document.wrappedValue.text
+        document.wrappedValue.text = text
+        guard let undoManager else { return }
+        undoManager.registerUndo(withTarget: undoManager) { manager in
+            replaceText(of: document, with: previous, undoManager: manager)
+        }
+        undoManager.setActionName("Toggle Task")
     }
 }
 
