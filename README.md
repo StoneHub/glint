@@ -3,7 +3,8 @@
 A small, run-on-demand Markdown and plain-text viewer/editor for macOS 26+, built with
 SwiftUI and Liquid Glass. Open a `.md` or `.txt`, read it rendered, flip to the editor, save,
 close — the app quits with its last window. It shows as **M↓**, the mark on its icon, in the
-Dock, menu bar, Finder and About panel; the bundle is still `Glint.app`.
+Dock, menu bar, Finder and About panel, and the bundle is `M↓.app`; the executable, the
+package and the bundle identifier keep the name Glint.
 
 ## Build and install
 
@@ -11,8 +12,8 @@ Dock, menu bar, Finder and About panel; the bundle is still `Glint.app`.
 Scripts/build.sh install
 ```
 
-That compiles the Swift package in release mode, assembles `build/Glint.app` (Info.plist,
-generated icon, ad-hoc signature), copies it to `~/Applications/Glint.app`, and registers it
+That compiles the Swift package in release mode, assembles `build/M↓.app` (Info.plist,
+generated icon, ad-hoc signature), copies it to `~/Applications/M↓.app`, and registers it
 with Launch Services. No Xcode project; `swift build` is the whole toolchain.
 
 Other commands: `Scripts/build.sh` (build only), `Scripts/build.sh run file.md`,
@@ -30,11 +31,11 @@ App extensions need an Xcode target, so `project.yml` is an XcodeGen spec for th
 builds `GlintQuickLook.appex` with `xcodebuild` (ad-hoc signed, sandboxed), embeds it under
 `Contents/PlugIns`, and re-signs the app. `install` then registers it with `pluginkit`, after
 which Finder's space-bar preview and `qlmanage -p file.md` render Markdown the way Glint does.
-A plain `Scripts/build.sh` keeps whatever extension is already in `build/Glint.app` and says so.
+A plain `Scripts/build.sh` keeps whatever extension is already in `build/M↓.app` and says so.
 
 ## Make it the default opener
 
-In Glint: **Glint menu → Make Glint the Default for Markdown & Text…** (also in Settings, ⌘,).
+In the app: **M↓ menu → Make Glint the Default for Markdown & Text…** (also in Settings, ⌘,).
 This calls `NSWorkspace.setDefaultApplication` for `net.daringfireball.markdown` and
 `public.plain-text`. Fallback: Finder › Get Info on a file › Open With › Glint › Change All…
 
