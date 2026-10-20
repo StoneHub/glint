@@ -68,6 +68,8 @@ the glass background on, the desktop shows through the window, and how clear or 
 glass looks follows Liquid Glass in System Settings › Appearance, as the toolbar and the stats
 pill always do.
 
+![The see-through glass background over the wallpaper, sweeping Liquid Glass from clear to tinted](docs/glass-tint-demo.gif)
+
 ## How it works
 
 - `TextDocument` is a `FileDocument`; `DocumentGroup` provides open/save/autosave/undo.
