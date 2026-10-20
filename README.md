@@ -75,8 +75,8 @@ Scripts/build.sh quicklook && Scripts/build.sh install
 ```
 
 App extensions need an Xcode target, so `project.yml` is an XcodeGen spec for that one target.
-`quicklook` builds the app as usual, generates `Glint.xcodeproj` (gitignored), builds
-`GlintQuickLook.appex` with `xcodebuild` (ad-hoc signed, sandboxed), embeds it under
+`quicklook` builds the app as usual, generates `MDown.xcodeproj` (gitignored), builds
+`MDownQuickLook.appex` with `xcodebuild` (ad-hoc signed, sandboxed), embeds it under
 `Contents/PlugIns` and re-signs the app. `install` then registers it with `pluginkit`, after
 which Finder's Space-bar preview and `qlmanage -p file.md` render Markdown the way the app
 does. A plain `Scripts/build.sh` keeps whatever extension is already in `build/M↓.app` and says

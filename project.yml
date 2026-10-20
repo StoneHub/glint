@@ -1,8 +1,8 @@
 # XcodeGen spec for the Quick Look extension only. The app itself is built by `swift build`
-# (Scripts/build.sh); `Scripts/build.sh quicklook` generates build/Glint.xcodeproj from this
+# (Scripts/build.sh); `Scripts/build.sh quicklook` generates MDown.xcodeproj from this
 # file, builds the .appex with xcodebuild, and embeds it in build/M↓.app. The extension's
 # Info.plist and entitlements are generated into build/ from the properties below.
-name: Glint
+name: MDown
 options:
   deploymentTarget:
     macOS: "26.0"
@@ -15,23 +15,23 @@ settings:
     CODE_SIGN_STYLE: Manual
     DEVELOPMENT_TEAM: ""
 targets:
-  GlintQuickLook:
+  MDownQuickLook:
     type: app-extension
     platform: macOS
     sources:
       - QuickLook
-      - Sources/Glint/Markdown
-      - Sources/Glint/Typography.swift
-      - Sources/Glint/TextFileDecoding.swift
+      - Sources/MDown/Markdown
+      - Sources/MDown/Typography.swift
+      - Sources/MDown/TextFileDecoding.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.stonehub.glint.quicklook
-        PRODUCT_NAME: GlintQuickLook
+        PRODUCT_NAME: MDownQuickLook
         APPLICATION_EXTENSION_API_ONLY: true
     info:
-      path: build/GlintQuickLook-Info.plist
+      path: build/MDownQuickLook-Info.plist
       properties:
-        CFBundleName: GlintQuickLook
+        CFBundleName: MDownQuickLook
         CFBundleDisplayName: "M↓ Markdown Preview"
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1"
@@ -44,7 +44,7 @@ targets:
               - net.daringfireball.markdown
             QLSupportsSearchableItems: false
     entitlements:
-      path: build/GlintQuickLook.entitlements
+      path: build/MDownQuickLook.entitlements
       properties:
         com.apple.security.app-sandbox: true
         com.apple.security.files.user-selected.read-only: true
