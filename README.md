@@ -49,8 +49,8 @@ the pill. It's off by default, because text is harder to read over a busy wallpa
 Needs macOS 26 or later and Xcode 26 or later for the Swift 6 toolchain.
 
 ```bash
-git clone https://github.com/StoneHub/glint.git
-cd glint
+git clone https://github.com/StoneHub/mdown.git
+cd mdown
 Scripts/build.sh install
 ```
 
