@@ -70,12 +70,17 @@ install() {
   mkdir -p "$HOME/Applications"
   ditto "$BUNDLE" "$dest"
   "$LSREGISTER" -f "$dest"
+  # Spotlight matches an app by its file name, and M↓ has no key to type. It also indexes Finder
+  # comments, so this one lets "mdown" find the app.
+  xattr -w com.apple.metadata:kMDItemFinderComment \
+    '<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><string>mdown · M↓ Markdown viewer and editor</string></plist>' "$dest"
+  mdimport "$dest"
   if [[ -d "$dest/Contents/PlugIns/GlintQuickLook.appex" ]]; then
     pluginkit -a "$dest/Contents/PlugIns/GlintQuickLook.appex"
     echo "registered the Quick Look extension; try: qlmanage -p README.md"
   fi
-  echo "installed $dest"
-  echo "To make it the default opener: M↓ menu → “Make Glint the Default for Markdown & Text…”"
+  echo "installed $dest (Spotlight: type mdown)"
+  echo "To make it the default opener: M↓ menu → “Make M↓ the Default for Markdown & Text…”"
 }
 
 case "${1:-build}" in

@@ -117,5 +117,5 @@ Images next to the file load from its folder.
 ## And
 
 - Press Space on a `.md` in Finder for this same preview in Quick Look.
-- **M↓ menu → Make Glint the Default for Markdown & Text…** opens `.md` files here.
+- **M↓ menu → Make M↓ the Default for Markdown & Text…** opens `.md` files here.
 - Close the last window and the app quits. :wave:

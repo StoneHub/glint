@@ -26,7 +26,7 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
             Section("Finder") {
-                Button("Make Glint the default app for .md and .txt") {
+                Button("Make M↓ the default app for .md and .txt") {
                     Task { await DefaultOpener.makeDefault() }
                 }
                 Text("Or use Finder › Get Info › Open With › Change All… on any .md or .txt file.")
