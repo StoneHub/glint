@@ -5,6 +5,9 @@ struct MarkdownPreview: View {
     let text: String
     let baseURL: URL?
     let scale: Double
+    /// Called with a `TaskMarker.index` when a task checkbox is clicked. nil (Quick Look)
+    /// leaves the checkboxes as plain images.
+    var onToggleTask: (@MainActor (Int) -> Void)? = nil
 
     @State private var blocks: [MarkdownBlock] = []
     @State private var hasRendered = false
@@ -19,7 +22,7 @@ struct MarkdownPreview: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14 * scale) {
                     ForEach(blocks) { block in
-                        MarkdownBlockView(block: block, scale: scale)
+                        MarkdownBlockView(block: block, scale: scale, onToggleTask: onToggleTask)
                     }
                 }
                 .frame(maxWidth: 760 * scale, alignment: .leading)
@@ -57,6 +60,7 @@ struct MarkdownPreview: View {
 struct MarkdownBlockView: View {
     let block: MarkdownBlock
     let scale: Double
+    let onToggleTask: (@MainActor (Int) -> Void)?
 
     var body: some View {
         switch block.kind {
@@ -87,14 +91,14 @@ struct MarkdownBlockView: View {
                     .fill(.tint.opacity(0.5))
                     .frame(width: 3)
                 VStack(alignment: .leading, spacing: 10 * scale) {
-                    ForEach(blocks) { MarkdownBlockView(block: $0, scale: scale) }
+                    ForEach(blocks) { MarkdownBlockView(block: $0, scale: scale, onToggleTask: onToggleTask) }
                 }
                 .foregroundStyle(.secondary)
             }
             .padding(.vertical, 2)
 
         case .list(let ordered, let items):
-            ListBlockView(ordered: ordered, items: items, scale: scale)
+            ListBlockView(ordered: ordered, items: items, scale: scale, onToggleTask: onToggleTask)
 
         case .table(let alignments, let header, let rows):
             TableBlockView(alignments: alignments, header: header, rows: rows)
@@ -199,6 +203,7 @@ struct ListBlockView: View {
     let ordered: Bool
     let items: [MarkdownBlock.ListItem]
     let scale: Double
+    let onToggleTask: (@MainActor (Int) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5 * scale) {
@@ -208,7 +213,7 @@ struct ListBlockView: View {
                         .font(.system(size: Typography.body * scale))
                         .frame(minWidth: 22, alignment: .trailing)
                     VStack(alignment: .leading, spacing: 6 * scale) {
-                        ForEach(item.blocks) { MarkdownBlockView(block: $0, scale: scale) }
+                        ForEach(item.blocks) { MarkdownBlockView(block: $0, scale: scale, onToggleTask: onToggleTask) }
                     }
                 }
             }
@@ -217,9 +222,15 @@ struct ListBlockView: View {
 
     @ViewBuilder
     private func marker(for item: MarkdownBlock.ListItem) -> some View {
-        if let done = item.task {
-            Image(systemName: done ? "checkmark.square.fill" : "square")
-                .foregroundStyle(done ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+        if let task = item.task {
+            let box = Image(systemName: task.done ? "checkmark.square.fill" : "square")
+                .foregroundStyle(task.done ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+            if let onToggleTask {
+                Button { onToggleTask(task.index) } label: { box }
+                    .buttonStyle(.plain)
+            } else {
+                box
+            }
         } else if ordered {
             Text("\(item.ordinal).")
                 .monospacedDigit()

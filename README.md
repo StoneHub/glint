@@ -49,7 +49,9 @@ This calls `NSWorkspace.setDefaultApplication` for `net.daringfireball.markdown`
 
 Markdown files open in Preview, plain text in Edit; change the defaults in Settings. The
 floating pill shows words / characters / lines. Links open in your browser; `[text](#heading)`
-anchors scroll within the document.
+anchors scroll within the document. Clicking a task-list checkbox in the preview flips its
+`[ ]` / `[x]` in the text: an ordinary edit that marks the document changed, shows in the
+editor, and undoes with ⌘Z. The Quick Look preview shows checkboxes but doesn't change files.
 
 The preview renders headings, paragraphs, nested lists, task lists, block quotes, tables with
 alignment, rules, images (with a "missing image" note for a local file that isn't there), and
@@ -71,6 +73,9 @@ and the default-opener button.
   the `presentationIntent` paths into a `MarkdownBlock` tree. Its inline pass bakes SwiftUI
   fonts into the runs and swaps emoji shortcodes; `SyntaxHighlighter` colors fenced code.
   No third-party dependencies.
+- Foundation reports no source positions, so each task item gets an index in document order;
+  `MarkdownParser.togglingTask` finds the line with that index (skipping fenced code) and flips
+  its box. `DocumentView` writes that through the document binding and registers the undo.
 - `MarkdownPreview` renders that tree with SwiftUI `Text`, `Grid`, and glass controls.
   `Typography` holds the point sizes and ratios.
 - Rendering runs off the main actor and is debounced while typing in Split mode.
@@ -83,6 +88,9 @@ and the default-opener button.
 
 ## Not done yet
 
+- A preview checkbox finds its line by counting list lines that start with a box. Markdown that
+  Foundation reads differently from that count (an escaped `\[ ]`, a box inside an indented code
+  block) can make a click flip the wrong box; ⌘Z puts it back.
 - Images next to a Markdown file can't be read inside the Quick Look preview (the extension's
   sandbox covers only the previewed file); the preview says "Can't read X here" in their place.
 - The Quick Look extension is only built by `Scripts/build.sh quicklook`; the package-only

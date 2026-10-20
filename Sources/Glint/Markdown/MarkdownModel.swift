@@ -22,9 +22,16 @@ struct MarkdownBlock: Identifiable, Sendable {
     struct ListItem: Identifiable, Sendable {
         let id: Int
         let ordinal: Int
-        /// nil = ordinary item; true/false = GitHub task list checkbox state
-        let task: Bool?
+        /// nil = ordinary item; otherwise a GitHub task list checkbox
+        let task: TaskMarker?
         let blocks: [MarkdownBlock]
+    }
+
+    /// `index` counts task items in document order (outer item before its nested ones), which is
+    /// how `MarkdownParser.togglingTask` finds the matching line in the source.
+    struct TaskMarker: Sendable {
+        let done: Bool
+        let index: Int
     }
 
     enum ColumnAlignment: Sendable {
@@ -82,7 +89,8 @@ struct MarkdownParser: Sendable {
             piece.presentationIntent = nil
             node.text.append(piece)
         }
-        return root.children.compactMap(block(from:))
+        var taskCount = 0
+        return root.children.compactMap { block(from: $0, taskCount: &taskCount) }
     }
 
     // MARK: Tree
@@ -99,11 +107,12 @@ struct MarkdownParser: Sendable {
         }
     }
 
-    private func block(from node: Node) -> MarkdownBlock? {
-        kind(of: node).map { MarkdownBlock(id: node.id, kind: $0) }
+    /// `taskCount` is the number of task items seen so far, so each one gets its index.
+    private func block(from node: Node, taskCount: inout Int) -> MarkdownBlock? {
+        kind(of: node, taskCount: &taskCount).map { MarkdownBlock(id: node.id, kind: $0) }
     }
 
-    private func kind(of node: Node) -> MarkdownBlock.Kind? {
+    private func kind(of node: Node, taskCount: inout Int) -> MarkdownBlock.Kind? {
         switch node.kind {
         case .paragraph?:
             if let image = soleImage(in: node.text) {
@@ -127,14 +136,19 @@ struct MarkdownParser: Sendable {
             return .code(language: language, code: code, highlighted: highlighted)
 
         case .blockQuote?:
-            return .quote(node.children.compactMap(block(from:)))
+            return .quote(node.children.compactMap { block(from: $0, taskCount: &taskCount) })
 
         case .orderedList?, .unorderedList?:
             let ordered = node.kind == .orderedList
             let items = node.children.compactMap { item -> MarkdownBlock.ListItem? in
                 guard case .listItem(let ordinal)? = item.kind else { return nil }
-                let task = stripTaskMarker(in: item)
-                return MarkdownBlock.ListItem(id: item.id, ordinal: ordinal, task: task, blocks: item.children.compactMap(block(from:)))
+                var task: MarkdownBlock.TaskMarker?
+                if let done = stripTaskMarker(in: item) {
+                    task = MarkdownBlock.TaskMarker(done: done, index: taskCount)
+                    taskCount += 1
+                }
+                let blocks = item.children.compactMap { block(from: $0, taskCount: &taskCount) }
+                return MarkdownBlock.ListItem(id: item.id, ordinal: ordinal, task: task, blocks: blocks)
             }
             return .list(ordered: ordered, items: items)
 
@@ -185,6 +199,35 @@ struct MarkdownParser: Sendable {
         let end = first.text.index(first.text.startIndex, offsetByCharacters: marker.prefix.count)
         first.text.removeSubrange(first.text.startIndex..<end)
         return marker.done
+    }
+
+    /// The source side of `TaskMarker.index`: `markdown` with the box of the `index`th task line
+    /// flipped, or nil if there is no such line. Lines are counted the way the parser emits
+    /// items (top to bottom, block quotes included) and lines inside fenced code are skipped.
+    static func togglingTask(_ index: Int, in markdown: String) -> String? {
+        let taskLine = #/(?:[ \t]*>)*[ \t]*(?:[-*+]|\d{1,9}[.)])[ \t]+\[([ xX])\] /#
+        let quoteAndIndent = #/(?:[ \t]*>)*[ \t]*/#
+        var lines = markdown.components(separatedBy: "\n")
+        var openFence: Substring?
+        var seen = 0
+        for i in lines.indices {
+            let content = lines[i].trimmingPrefix(quoteAndIndent)
+            if let fence = openFence {
+                if content.hasPrefix(fence) { openFence = nil }
+                continue
+            }
+            if content.hasPrefix("```") || content.hasPrefix("~~~") {
+                openFence = content.prefix { $0 == content.first }
+                continue
+            }
+            guard let match = lines[i].prefixMatch(of: taskLine) else { continue }
+            if seen == index {
+                lines[i].replaceSubrange(match.1.startIndex..<match.1.endIndex, with: match.1 == " " ? "x" : " ")
+                return lines.joined(separator: "\n")
+            }
+            seen += 1
+        }
+        return nil
     }
 
     /// A paragraph that is nothing but one image becomes an image block. Relative paths
