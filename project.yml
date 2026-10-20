@@ -25,7 +25,7 @@ targets:
       - Sources/MDown/TextFileDecoding.swift
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.stonehub.glint.quicklook
+        PRODUCT_BUNDLE_IDENTIFIER: com.stonehub.mdown.quicklook
         PRODUCT_NAME: MDownQuickLook
         APPLICATION_EXTENSION_API_ONLY: true
     info:

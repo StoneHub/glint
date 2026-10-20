@@ -7,7 +7,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>M↓</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.stonehub.glint</string>
+	<string>com.stonehub.mdown</string>
 	<key>CFBundleExecutable</key>
 	<string>MDown</string>
 	<key>CFBundlePackageType</key>
