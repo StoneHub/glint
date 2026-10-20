@@ -12,9 +12,8 @@
 
 ![Ticking task boxes in Split mode: each click flips the box's [ ] in the source](docs/checkbox-demo.gif)
 
-The project is called Glint; the app shows as **M↓**, the mark on its icon, in the Dock, the
-menu bar and Finder. Open [`Samples/Tour.md`](Samples/Tour.md) in it for a tour of everything
-below.
+The app is named for the mark on its icon. Spotlight can't take the arrow, so type **mdown** to
+find it. Open [`Samples/Tour.md`](Samples/Tour.md) in it for a tour of everything below.
 
 ## What it does
 
@@ -57,7 +56,8 @@ Scripts/build.sh install
 
 That builds the Swift package in release mode, assembles `build/M↓.app` with its generated
 icon and an ad-hoc signature, copies it to `~/Applications/M↓.app`, and registers it with
-Launch Services. There is no Xcode project; `swift build` is the whole toolchain.
+Launch Services, and adds a Finder comment so Spotlight finds it as **mdown**. There is no Xcode
+project; `swift build` is the whole toolchain.
 
 | Command | Does |
 |---|---|
@@ -84,7 +84,7 @@ so.
 
 ### Make it the default for .md and .txt
 
-**M↓ menu › Make Glint the Default for Markdown & Text…**, or the same button in Settings.
+**M↓ menu › Make M↓ the Default for Markdown & Text…**, or the same button in Settings.
 It calls `NSWorkspace.setDefaultApplication` for `net.daringfireball.markdown` and
 `public.plain-text`. The manual route: Finder › Get Info on a file › Open With › M↓ ›
 Change All…
@@ -138,8 +138,6 @@ The Finder section has the default-opener button.
 
 ## Not done yet
 
-- Spotlight knows the app only by the name M↓, and the arrow has no key. Open it from
-  `~/Applications` or keep it in the Dock.
 - A preview checkbox finds its line by counting list lines that start with a box. Markdown
   that Foundation reads differently from that count, such as an escaped `\[ ]` or a box inside an
   indented code block, can make a click flip the wrong box; ⌘Z puts it back.

@@ -17,13 +17,13 @@ enum DefaultOpener {
 
         let alert = NSAlert()
         if failures.isEmpty {
-            alert.messageText = "Glint is now the default for .md and .txt"
+            alert.messageText = "M↓ is now the default for .md and .txt"
             alert.informativeText = "Double-clicking Markdown or plain-text files in Finder opens them here."
         } else {
             alert.alertStyle = .warning
-            alert.messageText = "Couldn't set Glint as the default"
+            alert.messageText = "Couldn't set M↓ as the default"
             alert.informativeText = failures.joined(separator: "\n")
-                + "\n\nFallback: Finder › Get Info on a file › Open With › Glint › Change All…"
+                + "\n\nFallback: Finder › Get Info on a file › Open With › M↓ › Change All…"
         }
         alert.runModal()
     }

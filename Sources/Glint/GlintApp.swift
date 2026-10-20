@@ -75,7 +75,7 @@ struct ZoomCommands: Commands {
 struct DefaultOpenerCommands: Commands {
     var body: some Commands {
         CommandGroup(after: .appInfo) {
-            Button("Make Glint the Default for Markdown & Text…") {
+            Button("Make M↓ the Default for Markdown & Text…") {
                 Task { await DefaultOpener.makeDefault() }
             }
         }
