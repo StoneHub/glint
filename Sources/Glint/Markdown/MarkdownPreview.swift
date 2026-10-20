@@ -217,9 +217,9 @@ struct ListBlockView: View {
 
     @ViewBuilder
     private func marker(for item: MarkdownBlock.ListItem) -> some View {
-        if let done = item.task {
-            Image(systemName: done ? "checkmark.square.fill" : "square")
-                .foregroundStyle(done ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+        if let task = item.task {
+            Image(systemName: task.done ? "checkmark.square.fill" : "square")
+                .foregroundStyle(task.done ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
         } else if ordered {
             Text("\(item.ordinal).")
                 .monospacedDigit()
