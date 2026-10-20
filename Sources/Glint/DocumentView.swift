@@ -6,6 +6,7 @@ struct DocumentView: View {
 
     @State private var mode: ViewMode
     @AppStorage(Preferences.Key.previewScale) private var scale = 1.0
+    @AppStorage(Preferences.Key.seeThroughWindow) private var seeThrough = Preferences.Defaults.seeThroughWindow
     @Environment(\.undoManager) private var undoManager
 
     init(document: Binding<TextDocument>, fileURL: URL?) {
@@ -34,6 +35,7 @@ struct DocumentView: View {
                 }
             }
             .focusedSceneValue(\.viewMode, $mode)
+            .modifier(SeeThroughWindow(isOn: seeThrough))
     }
 
     @ViewBuilder

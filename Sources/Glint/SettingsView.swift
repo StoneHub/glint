@@ -4,6 +4,7 @@ struct SettingsView: View {
     @AppStorage(Preferences.Key.quitWhenLastWindowCloses) private var quitOnClose = Preferences.Defaults.quitWhenLastWindowCloses
     @AppStorage(Preferences.Key.markdownMode) private var markdownMode = Preferences.Defaults.markdownMode
     @AppStorage(Preferences.Key.plainTextMode) private var plainTextMode = Preferences.Defaults.plainTextMode
+    @AppStorage(Preferences.Key.seeThroughWindow) private var seeThrough = Preferences.Defaults.seeThroughWindow
 
     var body: some View {
         Form {
@@ -17,6 +18,12 @@ struct SettingsView: View {
             }
             Section("Behavior") {
                 Toggle("Quit when the last window closes", isOn: $quitOnClose)
+            }
+            Section("Window") {
+                Toggle("See-through glass background", isOn: $seeThrough)
+                Text("The desktop shows through the window, following the Liquid Glass setting in System Settings › Appearance. Text is harder to read over a busy wallpaper.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             Section("Finder") {
                 Button("Make Glint the default app for .md and .txt") {
