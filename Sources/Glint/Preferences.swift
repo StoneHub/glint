@@ -6,6 +6,7 @@ enum Preferences {
         static let quitWhenLastWindowCloses = "quitWhenLastWindowCloses"
         static let markdownMode = "markdownMode"
         static let plainTextMode = "plainTextMode"
+        static let seeThroughWindow = "seeThroughWindow"
     }
 
     /// Values used until the user changes them in Settings.
@@ -13,6 +14,7 @@ enum Preferences {
         static let markdownMode = ViewMode.preview
         static let plainTextMode = ViewMode.edit
         static let quitWhenLastWindowCloses = true
+        static let seeThroughWindow = false
     }
 
     enum Zoom {

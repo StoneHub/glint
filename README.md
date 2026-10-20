@@ -63,7 +63,10 @@ generic pass; a fence with no language stays plain). GitHub-style `:emoji:` shor
 emoji in prose, never inside code. The editor shows the literal text.
 
 Settings (⌘,): default mode per file type, quit when the last window closes (on by default),
-and the default-opener button.
+a see-through glass window background (off by default), and the default-opener button. With
+the glass background on, the desktop shows through the window, and how clear or tinted the
+glass looks follows Liquid Glass in System Settings › Appearance, as the toolbar and the stats
+pill always do.
 
 ## How it works
 
