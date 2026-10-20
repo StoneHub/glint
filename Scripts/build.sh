@@ -1,7 +1,7 @@
 #!/bin/zsh
-# Build Glint.app from the Swift package (no Xcode project needed).
+# Build the app bundle (M↓.app) from the Swift package (no Xcode project needed).
 #
-#   Scripts/build.sh            build  → build/Glint.app
+#   Scripts/build.sh            build  → build/M↓.app
 #   Scripts/build.sh install    build, copy to ~/Applications, register with Launch Services
 #   Scripts/build.sh run [file] build and open (optionally with a file)
 #   Scripts/build.sh icon       regenerate build/AppIcon.icns
@@ -12,10 +12,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-APP=Glint
+APP=Glint          # executable and SwiftPM product
+BUNDLE_NAME="M↓"   # the folder carries the display name, like the Dock and the menu bar
 BUILD=build
 CONF=${CONF:-release}
-BUNDLE="$BUILD/$APP.app"
+BUNDLE="$BUILD/$BUNDLE_NAME.app"
 PLUGINS="$BUNDLE/Contents/PlugIns"
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
@@ -65,7 +66,7 @@ quicklook() {
 install() {
   build
   note_kept_extension
-  local dest="$HOME/Applications/$APP.app"
+  local dest="$HOME/Applications/$BUNDLE_NAME.app"
   mkdir -p "$HOME/Applications"
   ditto "$BUNDLE" "$dest"
   "$LSREGISTER" -f "$dest"
@@ -74,7 +75,7 @@ install() {
     echo "registered the Quick Look extension; try: qlmanage -p README.md"
   fi
   echo "installed $dest"
-  echo "To make it the default opener: Glint menu → “Make Glint the Default for Markdown & Text…”"
+  echo "To make it the default opener: M↓ menu → “Make Glint the Default for Markdown & Text…”"
 }
 
 case "${1:-build}" in

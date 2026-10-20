@@ -1,6 +1,6 @@
 # XcodeGen spec for the Quick Look extension only. The app itself is built by `swift build`
 # (Scripts/build.sh); `Scripts/build.sh quicklook` generates build/Glint.xcodeproj from this
-# file, builds the .appex with xcodebuild, and embeds it in build/Glint.app. The extension's
+# file, builds the .appex with xcodebuild, and embeds it in build/M↓.app. The extension's
 # Info.plist and entitlements are generated into build/ from the properties below.
 name: Glint
 options:
